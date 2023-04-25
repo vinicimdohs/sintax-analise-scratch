@@ -5,19 +5,17 @@ import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 
 public class Lexico {
-
-    private String filePath;
     private String fileName;
     private int c;
     BufferedReader bufferedReader;
 
     public Lexico(String fileName){
         System.out.println(fileName);
-        this.filePath = Paths.get(fileName).toAbsolutePath().toString();
+        String filePath = Paths.get(fileName).toAbsolutePath().toString();
         this.fileName = fileName;
 
         try{
-            this.bufferedReader = new BufferedReader(new FileReader(this.filePath,StandardCharsets.UTF_8));
+            this.bufferedReader = new BufferedReader(new FileReader(filePath,StandardCharsets.UTF_8));
             this.c = this.bufferedReader.read();
         }catch (IOException err){
             System.err.println("Não é possivel abrir o arquivo " + this.fileName);
@@ -26,7 +24,7 @@ public class Lexico {
     }
 
     public Token getToken(){
-        StringBuilder lexema = new StringBuilder("");
+        StringBuilder lexema = new StringBuilder();
         char caracter;
         Token token = new Token();
 
