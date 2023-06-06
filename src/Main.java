@@ -8,18 +8,13 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Starting...");
 
-        String fileName = "test.txt";
+        String fileName = "test.pas";
 
         replaceTabWithSpaces(fileName);
 
-        Lexico lexico = new Lexico(fileName);
+        Sintatico sintatico = new Sintatico(fileName);
 
-        Token token = new Token();
-
-        while (token.getToken() != TokenEnum.cEOF){
-            token = lexico.getToken();
-            System.out.println(token);
-        }
+        sintatico.analyse();
     }
 
     public static void replaceTabWithSpaces(String fileName) {
