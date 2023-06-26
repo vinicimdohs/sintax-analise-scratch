@@ -1,4 +1,32 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Sintatico {
+    private final static int SIZEOF_INT = 4;
+    private int nivel;
+    private TabelaSimbolos tabela;
+    private int offsetVariavel;
+    private int contRotulo = 1;
+    private List<Registro> ultimasVariaveisDeclaradas = new ArrayList<>();
+    private Tipo ultimoTipoUsado = null;
+    private List<String> sectionData = new ArrayList<>();
+
+    private String nomeArquivoSaida;
+    private String caminhoArquivoSaida;
+    private BufferedWriter bw;
+    private FileWriter fw;
+
+    private String rotulo = "";
+    private String rotFim;
+    private String rotElse;
+    private String operadorRelacional;
+    private boolean writeln;
+    // ------
     private Lexico lexico;
     private  Token token;
     private int line;
@@ -20,7 +48,27 @@ public class Sintatico {
 
     public void analyse() {
         read();
-        program();
+        nomeArquivoSaida = "exitCode/compiladores.c";
+        caminhoArquivoSaida = Paths.get(nomeArquivoSaida).toAbsolutePath().toString();
+        bw = null;
+        fw = null;
+        try {
+            fw = new FileWriter(caminhoArquivoSaida, Charset.forName("UTF-8"));
+            bw = new BufferedWriter(fw);
+            program();
+            bw.close();
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void gerarCodigo(String instrucoes) {
+        try {
+            bw.write(instrucoes + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void program() {
@@ -155,6 +203,7 @@ public class Sintatico {
     public void mais_var_read() {
         if (token.getToken() == TokenEnum.cVirgula) {
             read();
+            gerarCodigo("teste de instrução");
             var_read();
         }
     }
