@@ -10,6 +10,8 @@ public class Sintatico {
     private final static int SIZEOF_INT = 4;
     private int nivel;
     private TabelaSimbolos tabela;
+
+    private int address;
     private int offsetVariavel;
     private int contRotulo = 1;
     private List<Registro> ultimasVariaveisDeclaradas = new ArrayList<>();
@@ -48,6 +50,7 @@ public class Sintatico {
 
     public void analyse() {
         read();
+        address=1;
         nomeArquivoSaida = "exitCode/compiladores.c";
         caminhoArquivoSaida = Paths.get(nomeArquivoSaida).toAbsolutePath().toString();
         bw = null;
@@ -72,16 +75,19 @@ public class Sintatico {
     }
 
     public void program() {
+        System.out.println("program");
         if (validaPrograma("program")) {
             read();
             if (token.getToken() == TokenEnum.cId) {
                 read();
+                A1();
                 corpo();
                 if (token.getToken() == TokenEnum.cPonto) {
                     read();
                 } else {
                     showError(" - faltou encerrar com ponto.");
                 }
+                A2();
             } else {
                 showError(" - faltou identificar o nome do programa.");
             }
@@ -91,6 +97,7 @@ public class Sintatico {
     }
 
     public void corpo() {
+        System.out.println("dentro corpo");
         declara();
         if (validaPrograma("begin")) {
             read();
@@ -141,8 +148,10 @@ public class Sintatico {
 
     public void tipo_var() {
         if (validaPrograma("integer")) {
+            A3("int");
             read();
         } else if (validaPrograma("real")) {
+            A3("float");
             read();
         } else {
             showError(" - faltou a declaração do integer.");
@@ -151,6 +160,7 @@ public class Sintatico {
 
     public void variaveis() {
         if (token.getToken() == TokenEnum.cId) {
+            A4();
             read();
             mais_var();
         } else {
@@ -203,7 +213,6 @@ public class Sintatico {
     public void mais_var_read() {
         if (token.getToken() == TokenEnum.cVirgula) {
             read();
-            gerarCodigo("teste de instrução");
             var_read();
         }
     }
@@ -498,5 +507,79 @@ public class Sintatico {
 
     public void showError(String mensagem) {
         System.out.println("Error na linha: " + token.getLine() + " e na coluna: " + token.getColumn() + mensagem);
+    }
+
+    private void A1() {
+        // Criar uma tabela de símbolos.
+        tabela = new TabelaSimbolos();
+        // Fazer o campo tabelaPai ser null.
+        tabela.setTabelaPai(null);
+        // Inserir o ID na tabela de símbolos.
+        Registro registro = new Registro();
+        registro.setNome(token.getValue().getValorIdentificador());
+        // Incializar o campo categoria com a informação que se trata do programa
+        // principal.
+        registro.setCategoria(Categoria.PROGRAMAPRINCIPAL);
+        // Incializar o campo nivel com zero.
+        registro.setNivel(0);
+        registro.setOffset(0);
+        registro.setTabelaSimbolos(tabela);
+        // Incializar o campo rotulo com "main".
+        registro.setRotulo("main");
+        tabela.inserirRegistro(registro);
+        // Inicializar nivel com zero.
+        nivel = 0;
+        // Declarar a variável offsetVariavel e iniciá-la com zero.
+        offsetVariavel = 0;
+        // Gerar o cabeçalho do programa, contendo a seção de instruções (global,
+        // section .text, etc.).
+        String codigo = "#include <stdio.h>" +
+                "\n\nint main(void){ \n";
+
+        gerarCodigo(codigo);
+    }
+
+    private void A2() {
+        Registro registro=new Registro();
+        registro.setNome(null);
+        registro.setCategoria(Categoria.PROGRAMAPRINCIPAL);
+        registro.setNivel(0);
+        registro.setOffset(0);
+        registro.setTabelaSimbolos(tabela);
+        registro.setRotulo("finalCode");
+        tabela.inserirRegistro(registro);
+        nivel=0;
+        offsetVariavel=0;
+        String codigo = "\n\treturn 0;\n}\n";
+        gerarCodigo(codigo);
+    }
+
+    private void A3(String type) {
+        String codigo= '\t'+type;
+        for(int i=0;i<this.ultimasVariaveisDeclaradas.size();i++)
+        {
+            codigo=codigo+' '+ this.ultimasVariaveisDeclaradas.get(i).getNome();
+            if(i == this.ultimasVariaveisDeclaradas.size()-1)
+            {
+                codigo=codigo + ';';
+            }
+            else{
+                codigo=codigo + ',';
+            }
+        }
+        gerarCodigo(codigo);
+    }
+
+    private void A4(){
+        Registro registro=new Registro();
+        registro.setNome(token.getValue().getValorIdentificador());
+        registro.setCategoria(Categoria.VARIAVEL);
+        registro.setNivel(0);
+        registro.setOffset(0);
+        registro.setTabelaSimbolos(tabela);
+        this.address++;
+        registro.setRotulo("variavel"+this.address);
+        ultimasVariaveisDeclaradas.add(registro);
+        this.tabela.inserirRegistro(registro);
     }
 }
