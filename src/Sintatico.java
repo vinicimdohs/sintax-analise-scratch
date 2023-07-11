@@ -201,45 +201,66 @@ public class Sintatico {
         }
     }
 
-    public void var_read() {
+    public List<Token> getVar_read(List<Token> arrayTokens) {
         if (token.getToken() == TokenEnum.cId) {
+            arrayTokens.add(token);
             read();
-            mais_var_read();
-        } else {
+            arrayTokens = getMais_var_read(arrayTokens);
+        }else {
             showError(" - faltou o identificador.");
         }
+        return arrayTokens;
     }
 
-    public void mais_var_read() {
+
+    public List<Token> getMais_var_read(List<Token> arrayTokens) {
         if (token.getToken() == TokenEnum.cVirgula) {
             read();
-            var_read();
+            arrayTokens = getVar_read(arrayTokens);
         }
+        return arrayTokens;
     }
 
-    public void var_write() {
+    public String getVar_write(String currCode) {
         if (token.getToken() == TokenEnum.cId) {
+            currCode += token.getValue().getValorIdentificador();
             read();
-            mais_var_write();
+            getMais_var_write(currCode);
         } else {
             showError(" -sem identificador.");
         }
+
+        return currCode;
     }
 
-    public void mais_var_write() {
+    public String getMais_var_write(String currCode) {
         if (token.getToken() == TokenEnum.cVirgula) {
+            currCode += ",";
             read();
-            var_write();
+            currCode = getVar_write(currCode);
         }
+        return currCode;
     }
 
     public void comando() {
         if (validaPrograma("read")) {
+            String currCode = "";
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
+                currCode = "(\"";
                 read();
-                var_read();
+                List<Token> arrayToken = new ArrayList<Token>();
+                arrayToken = getVar_read(arrayToken);
+                for(Token i: arrayToken){
+                    if(i == arrayToken.get(arrayToken.size()-1)){
+                        currCode=currCode+"&"+i.getValue().getValorIdentificador();
+                    }else{
+                        currCode=currCode+"&"+i.getValue().getValorIdentificador()+", ";
+                    }
+                }
                 if (token.getToken() == TokenEnum.cParDir) {
+                    currCode += ");";
+                    gerarCodigo(currCode);
                     read();
                 } else {
                     showError(" - sem parentese direito.");
@@ -248,11 +269,24 @@ public class Sintatico {
                 showError(" - sem parentese esquerdo.");
             }
         } else if (validaPrograma("write")) {
+            String referencias="\tprintf";
+            String currCode = "";
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
+                referencias = referencias + "(\"";
                 read();
-                var_write();
+                currCode += getVar_write("");
+
+                if (currCode.length() >  0) {
+                    referencias = referencias + "%d ".repeat(currCode.split(",").length);
+                    referencias = referencias + "\", ";
+                } else {
+                    referencias = referencias + "\"";
+                }
+
                 if (token.getToken() == TokenEnum.cParDir) {
+                    currCode=currCode+");";
+                    gerarCodigo(referencias + currCode);
                     read();
                 } else {
                     showError(" - faltou o parentese direito.");
@@ -263,22 +297,32 @@ public class Sintatico {
         } else
 
         if (validaPrograma("for")) {
+            String forCode = "\n\tfor(";
             read();
             if (token.getToken() == TokenEnum.cId) {
+                String identificador = token.getValue().getValorIdentificador();
+                forCode += identificador;
                 read();
 
                 if (token.getToken() == TokenEnum.cAtribuicao) {
+                    forCode += "=";
                     read();
-                    expressao();
+                    forCode += getExpressao();
                     if (validaPrograma("to")) {
+                        forCode=forCode+";";
                         read();
-                        expressao();
+                        forCode=forCode+identificador;
+                        forCode=forCode+"<="+getExpressao()+";";
+                        forCode=forCode+identificador + "++)";
                         if (validaPrograma("do")) {
                             read();
                             if (validaPrograma("begin")) {
+                                forCode += "{";
+                                gerarCodigo(forCode);
                                 read();
                                 sentencas();
                                 if (validaPrograma("end")) {
+                                    gerarCodigo("\t}");
                                     read();
                                 } else {
                                     showError(" - faltou o end no for.");
@@ -307,7 +351,7 @@ public class Sintatico {
                 read();
                 if (token.getToken() == TokenEnum.cParEsq) {
                     read();
-                    condicao();
+                    getCondicao();
                     if (token.getToken() == TokenEnum.cParDir) {
                         read();
                     } else {
@@ -325,7 +369,7 @@ public class Sintatico {
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
                 read();
-                condicao();
+                getCondicao();
                 if (token.getToken() == TokenEnum.cParDir) {
                     read();
                     if (validaPrograma("do")) {
@@ -354,7 +398,7 @@ public class Sintatico {
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
                 read();
-                condicao();
+                getCondicao();
                 if (token.getToken() == TokenEnum.cParDir) {
                     read();
                     if (validaPrograma("then")) {
@@ -384,26 +428,29 @@ public class Sintatico {
             read();
             if (token.getToken() == TokenEnum.cAtribuicao) {
                 read();
-                expressao();
+                getExpressao();
             } else {
                 showError(" - faltou atribuição.");
             }
         }
     }
 
-    public void condicao() {
-        expressao();
-        relacao();
-        expressao();
+    public String getCondicao() {
+        return getExpressao() + getRelacao() + getExpressao();
     }
 
     public void pfalsa() {
+        String start = "";
         if (validaPrograma("else")) {
+            start = start + "\telse";
             read();
             if (validaPrograma("begin")) {
+                start = start + "{";
+                gerarCodigo(start);
                 read();
                 sentencas();
                 if (validaPrograma("end")) {
+                    gerarCodigo("\n\t}");
                     read();
                 } else {
                     showError(" - faltou finalizar com end.");
@@ -414,75 +461,107 @@ public class Sintatico {
         }
     }
 
-    public void relacao() {
+    public String getRelacao() {
+        String relacao = "";
         if (validaTipos(1, TokenEnum.cIgual, TokenEnum.cIgual)) {
+            relacao = "=";
             read();
         } else if (validaTipos(1, TokenEnum.cMaior, TokenEnum.cMaior)) {
+            relacao = ">";
             read();
         } else if (validaTipos(1, TokenEnum.cMenor, TokenEnum.cMenor)) {
+            relacao = "<";
             read();
         } else if (validaTipos(1, TokenEnum.cMaiorIgual, TokenEnum.cMaiorIgual)) {
+            relacao = ">=";
             read();
         } else if (validaTipos(1, TokenEnum.cMenorIgual, TokenEnum.cMenorIgual)) {
+            relacao = "<=";
             read();
         } else if (validaTipos(1, TokenEnum.cDiferente, TokenEnum.cDiferente)) {
+            relacao = "!=";
             read();
         } else {
             showError(" - faltou o operador de relação.");
         }
+
+        return relacao;
     }
 
-    public void expressao() {
-        termo();
-        outros_termos();
+    public String getExpressao() {
+        return getTermo() + getOutros_termos();
     }
 
-    public void outros_termos() {
+    public String getOutros_termos() {
         if (validaTipos(2, TokenEnum.cMais, TokenEnum.cMenos)) {
-            op_ad();
-            termo();
-            outros_termos();
+            return  getOp_ad() + getTermo() + getOutros_termos();
         }
+
+        return "";
     }
 
-    public void op_ad() {
-        if (validaTipos(2, TokenEnum.cMais, TokenEnum.cMenos)) {
+    public String getOp_ad() {
+        String op_ad = "";
+
+        if (validaTipos(1, TokenEnum.cMais, TokenEnum.cMais)) {
+            op_ad = "+";
+            read();
+        }else if(validaTipos(1,TokenEnum.cMenos,TokenEnum.cMenos)) {
+            op_ad = "-";
             read();
         } else {
             showError(" - faltou colocar o operador de adição ou subtração.");
         }
+
+        return op_ad;
     }
 
-    public void termo() {
-        fator();
-        mais_fatores();
+    public String getTermo() {
+        return getFator() + getMais_fatores();
     }
 
-    public void mais_fatores() {
+    public String getMais_fatores() {
         if (validaTipos(2, TokenEnum.cMultiplicacao, TokenEnum.cDivisao)) {
-            op_mul();
-            fator();
-            mais_fatores();
+            return getOp_mul() + getFator() + getMais_fatores();
         }
+
+        return "";
     }
 
-    public void op_mul() {
-        if (validaTipos(2, TokenEnum.cMultiplicacao, TokenEnum.cDivisao)) {
+    public String getOp_mul() {
+        String op_mul = "";
+
+        if (validaTipos(1, TokenEnum.cMultiplicacao, TokenEnum.cMultiplicacao)) {
+            op_mul = "*";
+            read();
+        }else if(validaTipos(1,TokenEnum.cDivisao,TokenEnum.cDivisao)) {
+            op_mul = "/";
             read();
         } else {
             showError(" - faltou colocar o operador de multiplicação ou divisão.");
         }
+
+        return op_mul;
     }
 
-    public void fator() {
+    public String getFator() {
+        String fator = "";
+
         if (validaTipos(1, TokenEnum.cId, TokenEnum.cId)) {
+            fator = token.getValue().getValorIdentificador();
             read();
-        } else if (validaTipos(2, TokenEnum.cInt, TokenEnum.cReal)) {
+        } else if (validaTipos(1, TokenEnum.cInt, TokenEnum.cInt)) {
+            fator = String.valueOf(token.getValue().getValorInteiro());
+            read();
+        }else if(validaTipos(1,TokenEnum.cReal,TokenEnum.cReal)){
+            fator = String.valueOf(token.getValue().getValorDecimal());
             read();
         } else if (validaTipos(1, TokenEnum.cParEsq, TokenEnum.cParEsq)) {
+            fator = "(";
             read();
-            expressao();
+            fator = fator + getExpressao();
             if (validaTipos(1, TokenEnum.cParDir, TokenEnum.cParDir)) {
+                fator += ")";
                 read();
             } else {
                 showError(" - faltou o parentese direito.");
@@ -490,6 +569,8 @@ public class Sintatico {
         } else {
             showError(" - faltou fator in num exp.");
         }
+
+        return fator;
     }
 
     public Boolean validaTipos(int numeroDeValidacoes, TokenEnum token1, TokenEnum token2) {

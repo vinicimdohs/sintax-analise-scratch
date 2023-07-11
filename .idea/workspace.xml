@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="39ea4c2a-d316-455a-81c2-82375a19b675" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/exitCode/compiladores.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/exitCode/compiladores.c" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Sintatico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Sintatico.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
