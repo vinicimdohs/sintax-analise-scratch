@@ -244,13 +244,18 @@ public class Sintatico {
 
     public void comando() {
         if (validaPrograma("read")) {
-            String currCode = "";
+            String currCode = "\tscanf";
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
-                currCode = "(\"";
+                currCode += "(\"";
                 read();
                 List<Token> arrayToken = new ArrayList<Token>();
                 arrayToken = getVar_read(arrayToken);
+                for(Token i: arrayToken){
+                    currCode += "%d ";
+                }
+                currCode += "\", ";
+
                 for(Token i: arrayToken){
                     if(i == arrayToken.get(arrayToken.size()-1)){
                         currCode=currCode+"&"+i.getValue().getValorIdentificador();
@@ -345,14 +350,20 @@ public class Sintatico {
         } else
 
         if (validaPrograma("repeat")) {
+            String repeatCode = "\n\tdo {\n\t";
             read();
+            gerarCodigo(repeatCode);
             sentencas();
             if (validaPrograma("until")) {
                 read();
                 if (token.getToken() == TokenEnum.cParEsq) {
+                    String untilCode = "\n\t}while(";
+
                     read();
-                    getCondicao();
+                    untilCode += getCondicao();
                     if (token.getToken() == TokenEnum.cParDir) {
+                        untilCode += ");";
+                        gerarCodigo(untilCode);
                         read();
                     } else {
                         showError(" - faltou fechar o parentese no repeat");
@@ -366,18 +377,24 @@ public class Sintatico {
         }
 
         else if (validaPrograma("while")) {
+            String whileCode = "\n\twhile";
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
+                whileCode += "(";
                 read();
-                getCondicao();
+                whileCode += getCondicao();
                 if (token.getToken() == TokenEnum.cParDir) {
+                    whileCode += ")";
                     read();
                     if (validaPrograma("do")) {
                         read();
                         if (validaPrograma("begin")) {
+                            whileCode += "{\n";
+                            gerarCodigo(whileCode);
                             read();
                             sentencas();
                             if (validaPrograma("end")) {
+                                gerarCodigo("\t}\n");
                                 read();
                             } else {
                                 showError(" - faltou end no while.");
@@ -395,19 +412,25 @@ public class Sintatico {
                 showError(" - faltou o parentese esquerdo no while.");
             }
         } else if (validaPrograma("if")) {
+            String ifCode = "";
             read();
             if (token.getToken() == TokenEnum.cParEsq) {
+                ifCode += "\n\tif(";
                 read();
-                getCondicao();
+                ifCode += getCondicao();
                 if (token.getToken() == TokenEnum.cParDir) {
+                    ifCode += ")";
                     read();
                     if (validaPrograma("then")) {
                         read();
                         if (validaPrograma("begin")) {
+                            ifCode += " {";
+                            gerarCodigo(ifCode);
                             read();
                             sentencas();
                             if (validaPrograma("end")) {
                                 read();
+                                gerarCodigo("\t}");
                                 pfalsa();
                             } else {
                                 showError(" - faltou end no if.");
@@ -425,10 +448,13 @@ public class Sintatico {
                 showError(" - faltou o parentese esquerdo no if.");
             }
         } else if (token.getToken() == TokenEnum.cId) {
+            String codigo = "\n\t" + token.getValue().getValorIdentificador();
             read();
             if (token.getToken() == TokenEnum.cAtribuicao) {
+                codigo += "=";
                 read();
-                getExpressao();
+                codigo += getExpressao() + " ;";
+                gerarCodigo(codigo);
             } else {
                 showError(" - faltou atribuição.");
             }
@@ -597,6 +623,7 @@ public class Sintatico {
         tabela.setTabelaPai(null);
         // Inserir o ID na tabela de símbolos.
         Registro registro = new Registro();
+        System.out.println(token.getValue().getValorIdentificador());
         registro.setNome(token.getValue().getValorIdentificador());
         // Incializar o campo categoria com a informação que se trata do programa
         // principal.
@@ -615,7 +642,7 @@ public class Sintatico {
         // Gerar o cabeçalho do programa, contendo a seção de instruções (global,
         // section .text, etc.).
         String codigo = "#include <stdio.h>" +
-                "\n\nint main(void){ \n";
+                "\n\nint main(){ \n";
 
         gerarCodigo(codigo);
     }

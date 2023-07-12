@@ -1,6 +1,8 @@
 Program CalcularSalario
 Var TempoEmAnos, ValorSalario : Integer;
 Begin
+  read(TempoEmAnos, ValorSalario);
+  Write(TempoEmAnos);
   If (TempoEmAnos > 10) Then
   Begin
     ValorSalario := 100;
